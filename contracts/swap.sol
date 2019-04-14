@@ -36,7 +36,7 @@ contract OTCTrade {
     mapping (bytes32 => OrderObject) public ETHOrders;
     mapping (bytes32 => OrderObject) public DAIOrders;
 
-    function _addEthOrder(uint ETHQty) private returns (uint) {
+    function _addEthOrder(uint ETHQty) internal returns (uint) {
         OrderObject memory order = OrderObject(ETHTail, msg.sender, ETHQty, 0);
         bytes32 id = keccak256(abi.encodePacked(order.user, now));
         if (ETHHead == 0) {
@@ -50,7 +50,7 @@ contract OTCTrade {
         return ETHTotal;
     }
 
-    function _addDaiOrder(uint DAIQty) private returns (uint) {
+    function _addDaiOrder(uint DAIQty) internal returns (uint) {
         OrderObject memory order = OrderObject(DAITail, msg.sender, DAIQty, 0);
         bytes32 id = keccak256(abi.encodePacked(order.user, now));
         if (DAIHead == 0) {
@@ -64,7 +64,7 @@ contract OTCTrade {
         return DAITotal;
     }
 
-    function _ETHToDAIFillLess(uint DAIQty) private {
+    function _ETHToDAIFillLess(uint DAIQty) internal {
         OrderObject storage selectOrder = DAIOrders[DAIHead];
         if (selectOrder.tokenQty > DAIQty) {
             selectOrder.tokenQty = selectOrder.tokenQty - DAIQty;
@@ -92,7 +92,7 @@ contract OTCTrade {
         }
     }
 
-    function _ETHToDAIFillFull(uint DAIQty) private {
+    function _ETHToDAIFillFull(uint DAIQty) internal {
         if (DAIHead == 0) {
             uint ETHQty = DAIQty/ethToDaiRate;
             _addEthOrder(ETHQty);
@@ -107,7 +107,7 @@ contract OTCTrade {
         }
     }
 
-    function _DAIToETHFillLess(uint ETHQty) private {
+    function _DAIToETHFillLess(uint ETHQty) internal {
         OrderObject storage selectOrder = ETHOrders[ETHHead];
         if (selectOrder.tokenQty > ETHQty) {
             selectOrder.tokenQty = selectOrder.tokenQty - ETHQty;
@@ -135,7 +135,7 @@ contract OTCTrade {
         }
     }
 
-    function _DAIToETHFillFull(uint ETHQty) private {
+    function _DAIToETHFillFull(uint ETHQty) internal {
         if (DAIHead == 0) {
             uint DAIQty = ETHQty*ethToDaiRate;
             _addDaiOrder(DAIQty);
@@ -149,6 +149,22 @@ contract OTCTrade {
             _DAIToETHFillFull(ETHQty - selectOrder.tokenQty);
         }
     }
+
+    function transferETH() public payable {
+        msg.sender.transfer(address(this).balance);
+        emit LogTransferETH(msg.sender, address(this).balance);
+    }
+
+    function transferDAI() public {
+        IERC20 tkn = IERC20(daiAddr);
+        uint tknBal = tkn.balanceOf(address(this));
+        tkn.transfer(msg.sender, tknBal);
+        emit LogTransferERC20(daiAddr, msg.sender, tknBal);
+    }
+
+}
+
+contract Swap is OTCTrade {
 
     function swapETHToDAI() public payable returns (uint DAIQty) {
         DAIQty = msg.value * ethToDaiRate;
@@ -172,22 +188,6 @@ contract OTCTrade {
             _DAIToETHFillFull(DAIQty);
         }
     }
-
-    function transferETH() public payable {
-        msg.sender.transfer(address(this).balance);
-        emit LogTransferETH(msg.sender, address(this).balance);
-    }
-
-    function transferDAI() public {
-        IERC20 tkn = IERC20(daiAddr);
-        uint tknBal = tkn.balanceOf(address(this));
-        tkn.transfer(msg.sender, tknBal);
-        emit LogTransferERC20(daiAddr, msg.sender, tknBal);
-    }
-
-}
-
-contract MainContract is OTCTrade {
 
     function() external payable {}
 
