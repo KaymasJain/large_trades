@@ -13,10 +13,15 @@ contract OTCTrade {
     event LogTransferETH(address dest, uint amount);
     event LogTransferERC20(address token, address dest, uint amount);
 
-    uint public ethToDaiRate = 150;
+    uint public ethToDaiRate = 200;
 
-    // address public daiAddr = 0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359;
-    address public daiAddr = 0xad6d458402f60fd3bd25163575031acdce07538d; // Ropsten
+    // address public daiAddr = 0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359;
+    address public daiAddr = 0xaD6D458402F60fD3Bd25163575031ACDce07538D; // Ropsten
+
+    // function getDAIAddress() public pure returns (address DAIAddr) {
+    //     DAIAddr = 0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359;
+    //     DAIAddr = 0xaD6D458402F60fD3Bd25163575031ACDce07538D; // Ropsten
+    // }
 
     struct OrderObject {
         bytes32 head;
@@ -113,15 +118,15 @@ contract OTCTrade {
             selectOrder.tokenQty = selectOrder.tokenQty - ETHQty;
             ETHTotal = ETHTotal - ETHQty;
             uint DAIToTransfer = ETHQty*ethToDaiRate;
-            selectOrder.user.transfer(ETHQty);
-            IERC20(daiAddr).transfer(msg.sender, DAIToTransfer);
+            msg.sender.transfer(ETHQty);
+            IERC20(daiAddr).transfer(selectOrder.user, DAIToTransfer);
         } else if (selectOrder.tokenQty == ETHQty) {
             ETHHead = selectOrder.tail;
             ETHOrders[selectOrder.tail].head = 0;
             ETHTotal = ETHTotal - ETHQty;
             uint DAIToTransfer = ETHQty*ethToDaiRate;
-            selectOrder.user.transfer(ETHQty);
-            IERC20(daiAddr).transfer(msg.sender, DAIToTransfer);
+            msg.sender.transfer(ETHQty);
+            IERC20(daiAddr).transfer(selectOrder.user, DAIToTransfer);
             if (DAIHead == 0) {
                 DAITail = 0;
             }
@@ -129,14 +134,14 @@ contract OTCTrade {
             ETHHead = selectOrder.tail;
             ETHTotal = ETHTotal - selectOrder.tokenQty;
             uint DAIToTransfer = selectOrder.tokenQty*ethToDaiRate;
-            selectOrder.user.transfer(selectOrder.tokenQty);
-            IERC20(daiAddr).transfer(msg.sender, DAIToTransfer);
+            msg.sender.transfer(selectOrder.tokenQty);
+            IERC20(daiAddr).transfer(selectOrder.user, DAIToTransfer);
             _DAIToETHFillLess(ETHQty - selectOrder.tokenQty);
         }
     }
 
     function _DAIToETHFillFull(uint ETHQty) internal {
-        if (DAIHead == 0) {
+        if (ETHHead == 0) {
             uint DAIQty = ETHQty*ethToDaiRate;
             _addDaiOrder(DAIQty);
         } else {
@@ -144,8 +149,8 @@ contract OTCTrade {
             ETHHead = selectOrder.tail;
             ETHTotal = ETHTotal - selectOrder.tokenQty;
             uint DAIToTransfer = selectOrder.tokenQty*ethToDaiRate;
-            selectOrder.user.transfer(selectOrder.tokenQty);
-            IERC20(daiAddr).transfer(msg.sender, DAIToTransfer);
+            msg.sender.transfer(selectOrder.tokenQty);
+            IERC20(daiAddr).transfer(selectOrder.user, DAIToTransfer);
             _DAIToETHFillFull(ETHQty - selectOrder.tokenQty);
         }
     }
@@ -180,12 +185,12 @@ contract Swap is OTCTrade {
     function swapDAIToETH(uint DAIQty) public returns (uint ETHQty) {
         IERC20(daiAddr).transferFrom(msg.sender, address(this), DAIQty);
         ETHQty = DAIQty/ethToDaiRate;
-        if (ETHTotal > 0) {
-            _addDaiOrder(msg.value);
-        } else if (DAITotal >= DAIQty) {
-            _DAIToETHFillLess(DAIQty);
+        if (DAITotal > 0) {
+            _addDaiOrder(DAIQty);
+        } else if (ETHTotal >= ETHQty) {
+            _DAIToETHFillLess(ETHQty);
         } else {
-            _DAIToETHFillFull(DAIQty);
+            _DAIToETHFillFull(ETHQty);
         }
     }
 
