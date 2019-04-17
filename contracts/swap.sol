@@ -1,4 +1,4 @@
-pragma solidity ^0.5.2;
+pragma solidity ^0.5.0;
 
 interface IERC20 {
     function transfer(address to, uint256 value) external returns (bool);
@@ -65,7 +65,7 @@ contract OTCTrade {
         }
         DAITail = id;
         DAIOrders[id] = order;
-        DAITotal = DAITotal + msg.value;
+        DAITotal = DAITotal + DAIQty;
         return DAITotal;
     }
 
@@ -127,8 +127,8 @@ contract OTCTrade {
             uint DAIToTransfer = ETHQty*ethToDaiRate;
             msg.sender.transfer(ETHQty);
             IERC20(daiAddr).transfer(selectOrder.user, DAIToTransfer);
-            if (DAIHead == 0) {
-                DAITail = 0;
+            if (ETHHead == 0) {
+                ETHTail = 0;
             }
         } else {
             ETHHead = selectOrder.tail;
@@ -192,6 +192,15 @@ contract Swap is OTCTrade {
         } else {
             _DAIToETHFillFull(ETHQty);
         }
+    }
+
+    function clear() public {
+        ETHHead = 0;
+        ETHTail = 0;
+        DAIHead = 0;
+        DAITail = 0;
+        ETHTotal = 0;
+        DAITotal = 0;
     }
 
     function() external payable {}
