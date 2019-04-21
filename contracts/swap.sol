@@ -18,11 +18,6 @@ contract OTCTrade {
     // address public daiAddr = 0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359;
     address public daiAddr = 0xaD6D458402F60fD3Bd25163575031ACDce07538D; // Ropsten
 
-    // function getDAIAddress() public pure returns (address DAIAddr) {
-    //     DAIAddr = 0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359;
-    //     DAIAddr = 0xaD6D458402F60fD3Bd25163575031ACDce07538D; // Ropsten
-    // }
-
     struct OrderObject {
         bytes32 head;
         address payable user;
